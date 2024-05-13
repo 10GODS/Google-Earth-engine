@@ -1,0 +1,147 @@
+// This code is for aquatic ecosystem analysis using Google Earth Engine
+
+// Load Sentinel-2 image collection and filter by date and cloud cover
+var s2 = ee.ImageCollection('COPERNICUS/S2')
+  .filterDate('2020-01-01', '2020-12-31')
+  .filterBounds(roi)
+  .filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'less_than', 10);
+
+// Select bands for vegetation and water analysis
+var bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12'];
+
+// Define a function to calculate NDVI (Normalized Difference Vegetation Index)
+var ndvi = function(image) {
+  return image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+};
+
+// Define a function to calculate NDWI (Normalized Difference Water Index)
+var ndwi = function(image) {
+  return image.normalizedDifference(['B3', 'B8']).rename('NDWI');
+};
+
+// Define a function to calculate MNDWI (Modified Normalized Difference Water Index)
+var mndwi = function(image) {
+  return image.normalizedDifference(['B3', 'B11']).rename('MNDWI');
+};
+
+// Define a function to calculate TSS (Total Suspended Solids) using B4 and B3
+var tss = function(image) {
+  var b4 = image.select('B4');
+  var b3 = image.select('B3');
+  var tss = b4.divide(b3).multiply(1000).rename('TSS');
+  return tss;
+};
+
+// Define a function to calculate Chl-a (Chlorophyll-a) using B5 and B4
+var chla = function(image) {
+  var b5 = image.select('B5');
+  var b4 = image.select('B4');
+  var chla = b5.divide(b4).multiply(100).rename('Chl-a');
+  return chla;
+};
+
+// Define a function to calculate Turbidity using B3 and B2
+var turbidity = function(image) {
+  var b3 = image.select('B3');
+  var b2 = image.select('B2');
+  var turbidity = b3.divide(b2).multiply(100).rename('Turbidity');
+  return turbidity;
+};
+
+// Define a function to calculate all vegetation and water parameters
+var calcParams = function(image) {
+  var ndviImage = ndvi(image);
+  var ndwiImage = ndwi(image);
+  var mndwiImage = mndwi(image);
+  var tssImage = tss(image);
+  var chlaImage = chla(image);
+  var turbidityImage = turbidity(image);
+  
+  return image.addBands(ndviImage)
+    .addBands(ndwiImage)
+    .addBands(mndwiImage)
+    .addBands(tssImage)
+    .addBands(chlaImage)
+    .addBands(turbidityImage);
+};
+
+// Apply the calcParams function to the Sentinel-2 collection
+var s2Params = s2.map(calcParams);
+
+// Reduce the collection to get the mean values for each parameter
+var meanParams = s2Params.mean();
+
+// Export the NDVI image
+Export.image.toDrive({
+  image: meanParams.select(['NDVI']),
+  description: 'NDVI_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'NDVI_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+// Export the NDWI image
+Export.image.toDrive({
+  image: meanParams.select(['NDWI']),
+  description: 'NDWI_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'NDWI_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+// Export the MNDWI image
+Export.image.toDrive({
+  image: meanParams.select(['MNDWI']),
+  description: 'MNDWI_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'MNDWI_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+// Export the TSS image
+Export.image.toDrive({
+  image: meanParams.select(['TSS']),
+  description: 'TSS_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'TSS_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+// Export the Chl-a image
+Export.image.toDrive({
+  image: meanParams.select(['Chl-a']),
+  description: 'Chla_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'Chla_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+// Export the Turbidity image
+Export.image.toDrive({
+  image: meanParams.select(['Turbidity']),
+  description: 'Turbidity_Image',
+  scale: 10,
+  region: roi,
+  folder: 'Your_GEE_Folder',
+  fileNamePrefix: 'Turbidity_Image',
+  maxPixels:1e13,
+  fileFormat: 'GeoTIFF',
+});
+
+
+
