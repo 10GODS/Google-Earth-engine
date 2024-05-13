@@ -10,7 +10,7 @@ var s2 = ee.ImageCollection('COPERNICUS/S2')
 var bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12'];
 
 // Define a function to calculate NDVI (Normalized Difference Vegetation Index)
-var ndvi = function(image) {
+var ndvi = function(image) { 
   return image.normalizedDifference(['B8', 'B4']).rename('NDVI');
 };
 
